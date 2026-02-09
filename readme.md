@@ -56,4 +56,3 @@ Posteriormenre se ubicaran imágenes del proyecto
 
 ### Creado por:
 Ingrid Natalia Martinez Carrasco - 240537
----
