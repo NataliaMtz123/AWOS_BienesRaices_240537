@@ -23,7 +23,7 @@ gestionarse debidamente en el uso del control de versiones y ramas progresivas.<
 
 | No. | Descripcion                                      | Ponderación | Estatus        |
 |-----|--------------------------------------------------|-------------|----------------|
-| 1.  | Configuración inicial del Proyecto (NodeJs) | ✅ | ✅ |  
+| 1.  | Configuración inicial del Proyecto (NodeJs) | 2 | ✅ |  
 | 2.  | Routing y Requests (Peticiones) | ❌ | ❌ |  
 | 3.  |  Layouts, Templete Engines y Tailwind CSS (Frontend)| ❌ |❌  |  
 | 4.  | Creación de páginas de Login y Creación de Uusarios | ❌ | ❌ |  
