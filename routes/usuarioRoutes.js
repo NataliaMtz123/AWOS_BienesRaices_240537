@@ -1,5 +1,5 @@
 import express from 'express'
-
+import { fromularioLogin, formularioRegistro } from '../controllers/usuarioController.js'; 
 // Creamos el ruteador
 const router = express.Router();
 
@@ -85,7 +85,7 @@ router.patch("/updatePassword/:nuevoPassword", (req, res) => {
 })
 
 //Ejemplo de un ENDPOINT del tipo DELETE 
-router.delete("/deleteProperty", (req,res)=>
+router.delete("/deleteProperty/:id", (req,res)=>
 {
     console.log("Procesando una petición del tipo DELETE");
     const {id}=req.params;
@@ -97,15 +97,9 @@ router.delete("/deleteProperty", (req,res)=>
 })
 
 
-router.get("/login", (req, res) => {
-    console.log("El usuario desea acceder al sistema")
-    res.status(200).send(`<h1>Por favor introduce tus credenciales de acceso </h1>
-    <form>
-        <input type="text"></input><br>
-        <input type="password"></input><br>
-        <button>Enviar</button>
-    </form> `);
-})
+router.get("/login", fromularioLogin);
+router.get("/registro", formularioRegistro);
+
 
 router.get("/saludo/:nombre", (req, res) => {
     const { nombre } = req.params;
