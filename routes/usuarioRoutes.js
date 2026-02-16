@@ -1,5 +1,5 @@
 import express from 'express'
-
+import { fromularioLogin, formularioRegistro } from '../controllers/usuarioController.js'; 
 // Creamos el ruteador
 const router = express.Router();
 
@@ -97,11 +97,9 @@ router.delete("/deleteProperty/:id", (req,res)=>
 })
 
 
-router.get("/login", (req, res) => {
-    res.render("auth/login",{
-        autenticado:true
-    })
-});
+router.get("/login", fromularioLogin);
+router.get("/registro", formularioRegistro);
+
 
 router.get("/saludo/:nombre", (req, res) => {
     const { nombre } = req.params;
