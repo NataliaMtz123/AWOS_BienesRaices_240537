@@ -1,9 +1,9 @@
 const fromularioLogin = (req,res)=>{
-    res.render("auth/login");
+    res.render("auth/login", {pagina: "Inicia sesión con nosotros :)"});
 }
 
 const formularioRegistro=(req,res)=>{
-res.render("auth/registro");
+res.render("auth/registro", {pagina: "Registrate con nosotros :)"});
 }
 
 export {
