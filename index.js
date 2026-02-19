@@ -1,5 +1,6 @@
 import express from "express";
 import usuarioRoutes from "./routes/usuarioRoutes.js";
+import { connectDB } from '././config/db.js';
 
 //Instanciamos el Servidor que alojara la WebApp
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.static("public"));
 app.get("/", usuarioRoutes);
 //app.use("/", usuarioRoutes);
 app.use("/auth", usuarioRoutes);
+await connectDB();
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
