@@ -5,8 +5,13 @@ const fromularioLogin = (req,res)=>{
 const formularioRegistro=(req,res)=>{
 res.render("auth/registro", {pagina: "Registrate con nosotros :)"});
 }
+const formulariorecuperarPassword=(req,res)=>{
+res.render("auth/recuperarPassword", {pagina: "Recuperar contraseña :)"});
+}
+
 
 export {
     fromularioLogin,
-    formularioRegistro
+    formularioRegistro,
+    formulariorecuperarPassword
 }
