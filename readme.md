@@ -26,7 +26,7 @@ gestionarse debidamente en el uso del control de versiones y ramas progresivas.<
 | 1.  | Configuración inicial del Proyecto (NodeJs) | 2 | ✅ Finalizado |  
 | 2.  | Routing y Requests (Peticiones) | 5 | ✅ Finalizado |  
 | 3.  |  Layouts, Templete Engines y Tailwind CSS (Frontend)| 5 | ✅ Finalizado  |  
-| 4.  | Creación de páginas de Login y Creación de Uusarios | ❌ | ❌ |  
+| 4.  | Creación de páginas de Login y Creación de Uusarios | 6 | ✅ Finalizado |  
 | 5.  | ORM's y Bases de datos | ❌ | ❌ |  
 | 6.  | Inertando Registros en la Tabla Uusarios |  ❌|  ❌|  
 | 7.  | Implemnetación de la Funcionalidad (Feature) Recuperación de Contraseña (Password Recovery) | ❌ | ❌ |  
