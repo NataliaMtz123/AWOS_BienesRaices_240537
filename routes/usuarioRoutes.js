@@ -1,5 +1,5 @@
 import express from 'express'
-import { fromularioLogin, formularioRegistro, formulariorecuperarPassword } from '../controllers/usuarioController.js'; 
+import { fromularioLogin, formularioRegistro, registrarUsuario } from '../controllers/usuarioController.js'; 
 // Creamos el ruteador
 const router = express.Router();
 
@@ -25,8 +25,8 @@ router.post("/", (req, res) => {
     })
 })
 
-
 // Ejemplo de un ENDPOINT POST - Simular la creación de un nuevo usuario
+router.post("/registro",registrarUsuario);
 router.post("/createUser", (req, res) => {
     console.log("Se ha solicitado crear un nuevo usuario.")
     console.log("Procesando una peticion del tipo POST");
@@ -99,7 +99,7 @@ router.delete("/deleteProperty/:id", (req,res)=>
 
 router.get("/login", fromularioLogin);
 router.get("/registro", formularioRegistro);
-router.get("/recuperarPassword", formulariorecuperarPassword);
+//router.get("/recuperarPassword", formulariorecuperarPassword);
 
 
 router.get("/saludo/:nombre", (req, res) => {

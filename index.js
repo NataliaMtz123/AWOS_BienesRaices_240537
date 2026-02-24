@@ -12,6 +12,8 @@ app.set('views','./views')
 // Definimos la carpeta Pública
 app.use(express.static("public"));
 
+app.use(express.urlencoded({extended: true}));
+
 //Importamos sus rutas (ruteo)
 app.get("/", usuarioRoutes);
 //app.use("/", usuarioRoutes);
