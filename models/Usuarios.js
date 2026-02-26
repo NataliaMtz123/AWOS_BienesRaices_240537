@@ -32,7 +32,7 @@ const Usuario = db.define("Usuario", {
             },
             notEmpty: {
                 msg: "El email no puede estar vacío."
-            }
+            }   
         }
     },
     password: {
