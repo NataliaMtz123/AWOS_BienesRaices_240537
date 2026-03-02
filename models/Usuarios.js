@@ -75,10 +75,10 @@ const Usuario = db.define("Usuario", {
         defaultValue: false,
         field: "confirmed"
     },
-    tokenRecuperacion: {
+    token: {
         type: DataTypes.STRING(255),
         allowNull: true,
-        field: "token_recuperacion"
+        field: "token"
     },
     tokenExpiracion: {
         type: DataTypes.DATE,
