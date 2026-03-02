@@ -37,10 +37,10 @@ const Usuario = db.define("Usuario", {
     },
     password: {
         type: DataTypes.STRING(255),
-        allowNull:false,
+        allowNull: false, // Cambiado a false porque siempre debe tener un valor
         validate: {
             notEmpty: {
-                msg: "La contraseña NO puede estra vacia."
+                msg: "La contraseña NO puede estar vacia."
             },
             len:{
                 args: [8,100],
@@ -48,6 +48,28 @@ const Usuario = db.define("Usuario", {
             }
         }
     },
+    // 🆕 NUEVOS CAMPOS PARA AUTENTICACIÓN SOCIAL
+    proveedor: {
+        type: DataTypes.ENUM('local', 'google', 'github'),
+        defaultValue: 'local',
+        field: "proveedor"
+    },
+    proveedorId: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        field: "proveedor_id"
+    },
+    fotoPerfil: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        field: "foto_perfil"
+    },
+    emailVerificado: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: "email_verificado"
+    },
+    // Tus campos existentes (sin cambios)
     confirmed:{
         type: DataTypes.BOOLEAN,
         defaultValue: false,
@@ -98,4 +120,5 @@ const Usuario = db.define("Usuario", {
         }
     }
 });
+
 export default Usuario;
