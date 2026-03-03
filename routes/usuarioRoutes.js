@@ -5,6 +5,7 @@ import {
     fromularioLogin, 
     formularioRegistro, 
     registrarUsuario, 
+    paginaConfirmacion,
     googleCallback, 
     githubCallback, 
     logout,
@@ -17,6 +18,7 @@ router.get("/login", fromularioLogin);
 router.get("/registro", formularioRegistro);
 router.post("/registro", registrarUsuario);
 router.get("/perfil", perfilUsuario);
+router.get("/confirmar/:token", paginaConfirmacion);
 
 // 🔵 GOOGLE
 router.get('/google', passport.authenticate('google', { 

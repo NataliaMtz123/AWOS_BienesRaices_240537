@@ -1,7 +1,9 @@
 import { check, validationResult } from "express-validator";
 import Usuario from "../models/Usuarios.js";
 import { generarToken } from "../lib/tokens.js";
+import { emailRegistro } from "../lib/emails.js";
 import jwt from "jsonwebtoken";
+import { where } from "sequelize";
 
 // =============================
 // LOGIN
@@ -92,6 +94,7 @@ const registrarUsuario = async (req, res) => {
             });
         }
 
+        //const {nombreUsuario:name, correoUsuario:email, contraseUsuario:password}=res.body;
         // Crear usuario (mapeando los nombres correctamente)
         console.log('4. Creando usuario con datos mapeados:', {
             name: nombreUsuario,
@@ -101,15 +104,22 @@ const registrarUsuario = async (req, res) => {
         });
 
         const data = {
-            name: nombreUsuario,
-            email: correoUsuario,
-            password: contraseUsuario,
+            name:nombreUsuario,
+            email:correoUsuario,
+            password:contraseUsuario,
             token: generarToken()
         };
 
         const usuario = await Usuario.create(data);
         
         console.log('5. Usuario creado exitosamente, ID:', usuario.id);
+
+        //Enviar el correo electronico
+        emailRegistro({
+    nombre: usuario.name,  // Cambiado de nombreUsuario a nombre
+    email: usuario.email,  // Cambiado de correoUsuario a email
+    token: usuario.token
+});
 
         // Mensaje de éxito
         return res.render("templates/mensaje", {
@@ -158,6 +168,29 @@ const registrarUsuario = async (req, res) => {
             }
         });
     }
+};
+
+    const paginaConfirmacion = async (req, res) => {
+    const {token:tokenCuenta} = req.params
+    console.log("Confirmando la cuenta asociada al token:", tokenCuenta);
+
+    //confirmar que el token existe
+    const usuarioToken = await(Usuario.findOne({where: { token: tokenCuenta }})) ;
+    console.log(usuarioToken);
+
+    if(!usuarioToken){
+        res.render("templates/mensaje", {
+            title: "Error al confirmar tu cuenta",
+            msg: "El token de confirmación es inválido o ha expirado."});
+    }
+    //Actualizar los datos del usaurio
+    usuarioToken.token = null;
+    usuarioToken.confirmed = true;
+    usuarioToken.save();
+
+    res.render("templates/mensaje", {
+            title: "Confirmacion exitosa",
+            msg: `La cuenta de ${usuarioToken.name}, asociada al correo ${usuarioToken.email}, ha sido confirmada exitosamente.`});
 };
 
 // =============================
@@ -248,6 +281,7 @@ export {
     formularioRegistro,
     registrarUsuario,
     googleCallback,
+    paginaConfirmacion,
     githubCallback,
     logout,
     perfilUsuario
