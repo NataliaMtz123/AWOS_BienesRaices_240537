@@ -4,6 +4,7 @@ import passport from './config/passport.js';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import usuarioRoutes from "./routes/usuarioRoutes.js";
+import csurf from "@dr.pogodin/csurf";
 import { connectDB } from './config/db.js';
 
 // Cargar variables de entorno
@@ -25,7 +26,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // 🔐 SESIÓN
-app.use(session({
+/**app.use(session({
     secret: process.env.SESSION_SECRET || 'secreto_temporal',
     resave: false,
     saveUninitialized: false,
@@ -34,7 +35,33 @@ app.use(session({
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000
     }
+}));*/
+
+//Activamos la opcion para poder manipular Cookies - Almacenamiento en el cliente (navegador)
+//app.use(cookieParser());
+//app.use(express.json());
+
+
+//Definimos el Mideleware 
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'PC-BienesRaices_240537_csrf_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie:{
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production'
+    }
 }));
+
+//Habilitamos el mecanismo de protección CSRF
+app.use(csurf());
+
+//Habilitar las tokens de CSRF para cualquier formularios
+app.use((req, res, next) => {
+    res.locals.csrfToken = req.csrfToken();
+    next();
+});
 
 // 🔐 PASSPORT
 app.use(passport.initialize());
@@ -47,7 +74,6 @@ app.use("/auth", usuarioRoutes);
 await connectDB();
 
 // SERVIDOR
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor iniciado en el puerto ${PORT}`);
+app.listen(process.env.PORT ?? 40537, () => {
+    console.log(`🚀 Servidor esta iniciado en el puerto ${process.env.PORT }`)
 });

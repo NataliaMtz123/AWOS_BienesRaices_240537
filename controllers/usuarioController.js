@@ -1,7 +1,7 @@
 import { check, validationResult } from "express-validator";
 import Usuario from "../models/Usuarios.js";
 import { generarToken } from "../lib/tokens.js";
-import { emailRegistro } from "../lib/emails.js";
+import { emailRegistro } from "../lib/emails.js";//importacion 
 import jwt from "jsonwebtoken";
 import { where } from "sequelize";
 

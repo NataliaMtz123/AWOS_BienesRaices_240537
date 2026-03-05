@@ -27,6 +27,7 @@
     "watch:css": "npx @tailwindcss/cli -i ./src/css/styles.css -o ./public/css/styles.css --watch"
   },
   "dependencies": {
+    "@dr.pogodin/csurf": "^1.16.8",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
