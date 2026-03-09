@@ -1,7 +1,8 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 dotenv.config();
-const{
+
+const {
     DB_HOST,
     DB_PORT,
     DB_NAME,
@@ -9,18 +10,16 @@ const{
     DB_PASSWORD,
     DB_DIALECT,
     NODE_ENV
-}= process.env;
+} = process.env;
 
 const sequelize = new Sequelize(
-    DB_NAME, 
-    DB_USER, 
-    DB_PASSWORD, 
+    DB_NAME,
+    DB_USER,
+    DB_PASSWORD,
     {
         host: DB_HOST,
         port: DB_PORT,
         dialect: DB_DIALECT || "mysql",
-
-        //Buenas practicas actuales
         logging: NODE_ENV === "development" ? console.log : false,
         define: {
             timestamps: true,
@@ -34,21 +33,30 @@ const sequelize = new Sequelize(
             idle: 10000
         },
         dialectOptions: {
-            //Opciones específicas para MySQL
             charset: "utf8mb4",
         },
-        timezone: "-06:00" // Ajusta la zona horaria según tu ubicación (Mexico)
+        timezone: "-06:00"
     }
 );
 
 export const connectDB = async () => {
     try {
         await sequelize.authenticate();
-        console.log("Conexión a la base de datos establecida correctamente.");
+        console.log("✅ Conexión a la base de datos establecida correctamente.");
+        
+        // Sincronizar modelos con alter:true para actualizar la estructura
+        // ⚠️ SOLO PARA DESARROLLO - En producción usar migraciones
+        if (NODE_ENV === "development") {
+            await sequelize.sync({ alter: true });
+            console.log("✅ Modelos sincronizados con la base de datos");
+        } else {
+            await sequelize.sync();
+        }
+        
     } catch (error) {
-        console.error("No se pudo conectar a la base de datos:", error);
-        process.exit(1); // Salir con un código de error
+        console.error("❌ No se pudo conectar a la base de datos:", error);
+        process.exit(1);
     }
-};  
+};
 
 export default sequelize;

@@ -8,7 +8,22 @@ html(lang="es")
         link(rel="stylesheet", href="/css/styles.css")
 
     body.min-h-screen.bg-gray-100
-       main(class="mx-auto container mt-10 px-20")
+        main(class="mx-auto container mt-10 px-20")
             block contenido
 
-    //footer.bg-neutral-primary-soft.rounded-base.shadow-xs.border
+        script.
+            document.addEventListener('DOMContentLoaded', function(){
+
+                setTimeout(()=>{
+                    document.querySelectorAll('.alerta').forEach(alerta=>{
+                        alerta.remove();
+                    });
+                },3000);
+
+                document.querySelectorAll('.cerrar').forEach(btn=>{
+                    btn.addEventListener('click', function(){
+                        this.closest('.alerta').remove();
+                    });
+                });
+
+            });
