@@ -1,79 +1,81 @@
 import express from "express";
-import session from 'express-session';
-import passport from './config/passport.js';
-import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
+import session from "express-session";
+import passport from "./config/passport.js";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
 import usuarioRoutes from "./routes/usuarioRoutes.js";
 import csurf from "@dr.pogodin/csurf";
-import { connectDB } from './config/db.js';
+import { connectDB } from "./config/db.js";
 
-// Cargar variables de entorno
 dotenv.config();
 
-// Instanciamos el servidor
 const app = express();
 
-// Habilitamos pug
-app.set('view engine','pug');
-app.set('views','./views');
+// Motor de vistas
+app.set("view engine", "pug");
+app.set("views", "./views");
 
-// Carpeta pública
+// Archivos estáticos
 app.use(express.static("public"));
 
-// Middlewares
-app.use(express.urlencoded({extended: true}));
+// Body parser
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Cookies
 app.use(cookieParser());
 
-// 🔐 SESIÓN
-/**app.use(session({
-    secret: process.env.SESSION_SECRET || 'secreto_temporal',
+// 🔐 Sesiones
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "PC-BienesRaices_240537_csrf_secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000
-    }
-}));*/
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
+  })
+);
 
-//Activamos la opcion para poder manipular Cookies - Almacenamiento en el cliente (navegador)
-//app.use(cookieParser());
-//app.use(express.json());
-
-
-//Definimos el Mideleware 
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'PC-BienesRaices_240537_csrf_secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie:{
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
-    }
-}));
-
-//Habilitamos el mecanismo de protección CSRF
-app.use(csurf());
-
-//Habilitar las tokens de CSRF para cualquier formularios
-app.use((req, res, next) => {
-    res.locals.csrfToken = req.csrfToken();
-    next();
-});
-
-// 🔐 PASSPORT
+// 🔐 Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// RUTAS
+// 🔐 CSRF
+app.use(csurf());
+
+// Token para formularios
+app.use((req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+
+// Rutas
 app.use("/auth", usuarioRoutes);
+
+// Error CSRF
+app.use((err, req, res, next) => {
+  if (err.code === "EBADCSRFTOKEN") {
+    return res.status(403).render("templates/mensaje", {
+      pagina: "Error de seguridad",
+      title: "Error CSRF",
+      mensajes: [
+        {
+          msg: "El formulario ha expirado o no es válido. Por favor, inténtalo de nuevo.",
+        },
+      ],
+    });
+  }
+
+  next(err);
+});
 
 // DB
 await connectDB();
 
-// SERVIDOR
+// Servidor
 app.listen(process.env.PORT ?? 40537, () => {
-    console.log(`🚀 Servidor esta iniciado en el puerto ${process.env.PORT }`)
+  console.log(`🚀 Servidor iniciado en el puerto ${process.env.PORT ?? 40537}`);
 });
