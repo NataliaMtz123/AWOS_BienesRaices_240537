@@ -9,10 +9,13 @@ block contenido
          if errores 
             .max-w-md.mx-auto.my-6
                 each error in errores
-                    .alerta
-                        span.mensaje= error.msg
-                        button.cerrar(type="button") ✕
-                        span.barra-tiempo
+                    .bg-red-50.border-l-4.border-red-500.text-red-700.p-4.mb-3.shadow-md.rounded-r-xl.relative.flex.items-center.justify-between(role="alert")
+                        div.flex.items-center
+                            svg.w-5.h-5.mr-2(fill="currentColor" viewBox="0 0 20 20")
+                                path(fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd")
+                            p.text-sm.font-bold= error.msg
+                        //- Solución: Definimos la clase hover dentro de los paréntesis
+                        button(class="text-red-500 hover:text-red-800 font-bold" type="button" onclick="this.parentElement.remove()") ✕
 
         .mt-8.mx-auto.max-w-xl
             .bg-white.py-8.px-4.shadow-2xl.rounded-2xl
@@ -71,7 +74,7 @@ block contenido
 
                     div.flex.items-center.justify-between.mt-6
                         a.text-gray-500.text-sm.hover-decoration-blue-600.hover-underline.transition.decoration-2(href="/auth/login") ¿Ya tienes una cuenta? Inicia sesion
-                        a.text-gray-500.text-sm.hover-decoration-blue-600.hover-underline.transition.decoration-2(href="/recuperar") ¿Olvidaste tu contraseña? Recuperarla
+                        a.text-gray-500.text-sm.hover-decoration-blue-600.hover-underline.transition.decoration-2(href="/auth/recuperarPassword") ¿Olvidaste tu contraseña? Recuperarla
 
     script.
         document.addEventListener('DOMContentLoaded', function() {

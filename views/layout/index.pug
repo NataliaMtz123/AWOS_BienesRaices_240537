@@ -14,12 +14,6 @@ html(lang="es")
         script.
             document.addEventListener('DOMContentLoaded', function(){
 
-                setTimeout(()=>{
-                    document.querySelectorAll('.alerta').forEach(alerta=>{
-                        alerta.remove();
-                    });
-                },3000);
-
                 document.querySelectorAll('.cerrar').forEach(btn=>{
                     btn.addEventListener('click', function(){
                         this.closest('.alerta').remove();

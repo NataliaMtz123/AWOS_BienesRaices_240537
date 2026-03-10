@@ -2,6 +2,7 @@ import { check, validationResult } from "express-validator";
 import Usuario from "../models/Usuarios.js";
 import { generarToken } from "../lib/tokens.js";
 import { emailRegistro } from "../lib/emails.js";//importacion 
+import { emailResetearPassword } from "../lib/emails.js";//importacion
 import jwt from "jsonwebtoken";
 import { where } from "sequelize";
 
@@ -23,6 +24,54 @@ const formularioRegistro = (req, res) => {
     });
 };
 
+const formularioActualizarPassword = (req, res) => {
+    const { token } = req.params;
+
+    return res.render("auth/actualizarPassword", {
+        pagina: "Ingresa tu nueva contraseña",
+        token
+    });
+};
+
+const actualizarPassword = async (req, res) => {
+    const { token } = req.params;
+    const { passwordUsuario, confirmacionUsuario } = req.body;
+
+    if (!passwordUsuario || passwordUsuario.length < 8) {
+        return res.render("auth/actualizarPassword", {
+            pagina: "Ingresa tu nueva contraseña",
+            token,
+            errores: [{ msg: "La contraseña debe tener al menos 8 caracteres." }]
+        });
+    }
+
+    if (passwordUsuario !== confirmacionUsuario) {
+        return res.render("auth/actualizarPassword", {
+            pagina: "Ingresa tu nueva contraseña",
+            token,
+            errores: [{ msg: "Las contraseñas no coinciden." }]
+        });
+    }
+
+    const usuario = await Usuario.findOne({ where: { token } });
+
+    if (!usuario) {
+        return res.render("templates/mensaje", {
+            title: "Token inválido",
+            msg: "El enlace para restablecer la contraseña no es válido o ya expiró."
+        });
+    }
+
+    usuario.password = passwordUsuario;
+    usuario.token = null;
+    await usuario.save();
+
+    return res.render("templates/mensaje", {
+        title: "Contraseña actualizada",
+        msg: "Tu contraseña ha sido actualizada correctamente. Ya puedes iniciar sesión."
+    });
+};
+
 // =============================
 // REGISTRAR USUARIO (CORREGIDO)
 // =============================
@@ -32,7 +81,7 @@ const registrarUsuario = async (req, res) => {
         nombreUsuario,
         correoUsuario,
         contraseUsuario,
-        confirmarContraseUsuario
+        confirmarContraseUsuario    
     } = req.body;
 
     console.log('1. Datos recibidos:', { nombreUsuario, correoUsuario, contraseUsuario });
@@ -86,11 +135,8 @@ const registrarUsuario = async (req, res) => {
                 pagina: "Error al crear tu cuenta",
                 errores: [
                     { msg: `Ya existe un usuario asociado al correo: ${correoUsuario}` }
-                ],
-                usuario: {
-                    nombreUsuario,
-                    correoUsuario
-                }
+                ]
+                
             });
         }
 
@@ -181,7 +227,11 @@ const registrarUsuario = async (req, res) => {
     if(!usuarioToken){
         res.render("templates/mensaje", {
             title: "Error al confirmar tu cuenta",
-            msg: "El token de confirmación es inválido o ha expirado."});
+            msg: "El token de confirmación es inválido o ha expirado.",
+        buttonVisible: false,
+        buttonText: null,
+        buttonLink: null
+        });
     }
     //Actualizar los datos del usaurio
     usuarioToken.token = null;
@@ -190,7 +240,10 @@ const registrarUsuario = async (req, res) => {
 
     res.render("templates/mensaje", {
             title: "Confirmacion exitosa",
-            msg: `La cuenta de ${usuarioToken.name}, asociada al correo ${usuarioToken.email}, ha sido confirmada exitosamente.`});
+            msg: `La cuenta de ${usuarioToken.name}, asociada al correo ${usuarioToken.email}, ha sido confirmada exitosamente.`,
+        buttonVisible: true,
+        buttonText: "Ingresar a Bienes Raíces - 240537",
+        buttonLink: "/auth/login"});
 };
 
 // =============================
@@ -274,6 +327,72 @@ const logout = (req, res, next) => {
 };
 
 // =============================
+// RESET PASSWORD
+// =============================
+const resetearPassword = async (req, res) => {
+
+    // GET -> mostrar formulario
+    if (req.method === "GET") {
+        return res.render("auth/recuperarPassword", {
+            pagina: "Recuperar contraseña"
+        });
+    }
+
+    // POST -> procesar formulario
+    const { emailUsuario } = req.body;
+
+    console.log(`El usuario con correo: ${emailUsuario} solicita resetear su contraseña`);
+
+    // =============================
+    // Validación 1
+    // =============================
+    const usuario = await Usuario.findOne({
+        where: { email: emailUsuario }
+    });
+
+    // SELECT email FROM tb_usuarios WHERE email = correoUsuario
+
+    if (!usuario) {
+        return res.render("templates/mensaje", {
+            title: "Error buscando la cuenta",
+            msg: `No existe ninguna cuenta asociada al correo: ${emailUsuario}`,
+            buttonVisible: true,
+        buttonText: "Inténtalo de nuevo",
+        buttonLink: "/auth/recuperarPassword"
+        });
+    }
+
+    // Si el usuario existe pero no ha confirmado su cuenta
+    if (!usuario.confirmed) {
+        return res.render("templates/mensaje", {
+            title: "Cuenta no validada",
+            msg: `La cuenta asociada al correo: ${emailUsuario} no ha sido confirmada. Revisa tu correo para encontrar la liga de validación.`
+        });
+    }
+
+   else {
+        // actualizar el token y guardarlo
+        usuario.token = generarToken();
+        await usuario.save();
+
+        // Enviar el correo electronico
+        await emailResetearPassword({
+            nombre: usuario.name,
+            email: usuario.email,
+            token: usuario.token
+        });
+
+        // responder con una vista de correo enviado
+        return res.render("templates/mensaje", {
+            title: "Revisa tu correo",
+            msg: `Hemos enviado un correo a ${usuario.email} con instrucciones para recuperar tu contraseña`,
+            buttonVisible: false
+        });
+    }
+};
+
+
+// =============================
 // EXPORTACIONES
 // =============================
 export {
@@ -284,5 +403,8 @@ export {
     paginaConfirmacion,
     githubCallback,
     logout,
-    perfilUsuario
+    perfilUsuario,
+    resetearPassword,
+    formularioActualizarPassword,
+    actualizarPassword
 };

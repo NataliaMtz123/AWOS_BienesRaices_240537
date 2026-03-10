@@ -9,7 +9,10 @@ import {
     googleCallback, 
     githubCallback, 
     logout,
-    perfilUsuario
+    perfilUsuario,
+    resetearPassword,
+    formularioActualizarPassword,
+    actualizarPassword
 } from '../controllers/usuarioController.js'; 
 
 const router = express.Router();
@@ -18,8 +21,12 @@ router.get("/login", fromularioLogin);
 router.get("/registro", formularioRegistro);
 router.post("/registro", registrarUsuario);
 router.get("/perfil", perfilUsuario);
+router.get("/recuperarPassword",resetearPassword );
 router.get("/confirmar/:token", paginaConfirmacion);
+router.get("/actualizarPassword/:token", formularioActualizarPassword);
+router.post("/actualizarPassword/:token", resetearPassword);
 
+router.post("/recuperarPassword",resetearPassword);
 // 🔵 GOOGLE
 router.get('/google', passport.authenticate('google', { 
     scope: ['profile', 'email'],
