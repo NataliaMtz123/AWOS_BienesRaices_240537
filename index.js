@@ -1,81 +1,72 @@
-import express from "express";
+//console.log("Hola desde JS");
+import express from 'express';
+import usuarioRoutes from './routes/usuarioRoutes.js';
+import { connectDB} from './config/db.js';
 import session from "express-session";
-import passport from "./config/passport.js";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
-import usuarioRoutes from "./routes/usuarioRoutes.js";
 import csurf from "@dr.pogodin/csurf";
-import { connectDB } from "./config/db.js";
 
-dotenv.config();
+// NUEVO
+import passport from "./config/passport.js";
 
+// Crea una instancia del contenedor web 
 const app = express();
 
-// Motor de vistas
+// Habilitar el Template Engine (PUG)
 app.set("view engine", "pug");
-app.set("views", "./views");
+app.set("views", "./views")
 
-// Archivos estáticos
-app.use(express.static("public"));
+// Definimos la carpeta de los recursos estáticos
+app.use(express.static('public'))
 
-// Body parser
-app.use(express.urlencoded({ extended: true }));
+// Habilitar lectura de datos a través de las peticiones (REQUEST)
+app.use(express.urlencoded({extended: true}))
+// Activamos la opción para poder manipular Cookies - Almacenamiento en el cliente (navegador) 
+app.use(cookieParser());
 app.use(express.json());
 
-// Cookies
-app.use(cookieParser());
-
-// 🔐 Sesiones
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "PC-BienesRaices_240537_csrf_secret",
+// Definimos el Middleware
+app.use(session({
+    secret: process.env.SESSION_SECRET||"PC-BienesRaices_MATRICULA_csrf_secret",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: false, 
     cookie: {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    },
-  })
-);
+        httpOnly: true, 
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production"
+        }
+    }));
 
-// 🔐 Passport
+// NUEVO
 app.use(passport.initialize());
 app.use(passport.session());
 
-// 🔐 CSRF
-app.use(csurf());
+//Habilitamos el mecanismo para protección de CSRF
+app.use(csurf())
 
-// Token para formularios
-app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken();
-  next();
+// Habilitar los tokes de CSRF para cualquier formulario
+app.use((req, res, next) =>
+{
+    res.locals.csrfToken = req.csrfToken();
+    next();
 });
 
-// Rutas
-app.use("/auth", usuarioRoutes);
-
-// Error CSRF
-app.use((err, req, res, next) => {
-  if (err.code === "EBADCSRFTOKEN") {
-    return res.status(403).render("templates/mensaje", {
-      pagina: "Error de seguridad",
-      title: "Error CSRF",
-      mensajes: [
-        {
-          msg: "El formulario ha expirado o no es válido. Por favor, inténtalo de nuevo.",
-        },
-      ],
-    });
-  }
-
-  next(err);
-});
-
-// DB
+app.use("/auth", usuarioRoutes)
 await connectDB();
 
-// Servidor
-app.listen(process.env.PORT ?? 40537, () => {
-  console.log(`🚀 Servidor iniciado en el puerto ${process.env.PORT ?? 40537}`);
+// Cachear el error
+app.use((err, req, res, next) => {
+    if (err.code === "EBADCSRFTOKEN") {
+        return res.status(403).render("templates/mensaje", {
+            pagina: "Error de seguridad",
+            title: "Error CSRF",
+            msg: "El formulario expiró o fue manipulado. Recarga la página."
+        });
+    }
+
+    next(err);
 });
+
+app.listen(process.env.PORT ?? 4000, ()=> {
+    console.log(`El servidor esta iniciado en el puerto ${process.env.PORT}`)
+})

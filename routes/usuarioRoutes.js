@@ -1,63 +1,123 @@
 import express from 'express'
-import passport from 'passport';
-
-import { 
-    fromularioLogin, 
-    formularioRegistro, 
-    registrarUsuario, 
-    paginaConfirmacion,
-    googleCallback, 
-    githubCallback, 
-    logout,
-    perfilUsuario,
-    resetearPassword,
-    formularioActualizarPassword,
-    actualizarPassword
-} from '../controllers/usuarioController.js'; 
+import {formularioLogin, formularioRecuperacion, formularioRegistro, registrarUsuario,
+    paginaConfirmacion,resetearPassword, formularioActualizacionPassword
+} from '../controllers/usuarioController.js'
+import passport from '../config/passport.js'
 
 const router = express.Router();
 
-router.get("/login", fromularioLogin);
-router.get("/registro", formularioRegistro);
-router.post("/registro", registrarUsuario);
-router.get("/perfil", perfilUsuario);
-router.get("/recuperarPassword",resetearPassword );
-router.get("/confirmar/:token", paginaConfirmacion);
-router.get("/actualizarPassword/:token", formularioActualizarPassword);
-router.post("/actualizarPassword/:token", resetearPassword);
+// Definir los ENDPOINTS
+// GET
+router.get("/login", formularioLogin)
+router.get("/registro", formularioRegistro)
+router.get("/recuperarPassword", formularioRecuperacion)
+router.get("/confirma/:token", paginaConfirmacion)
+router.get("/actualizarPassword/:token", formularioActualizacionPassword)
 
-router.post("/recuperarPassword",resetearPassword);
-// 🔵 GOOGLE
-router.get('/google', passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    prompt: 'select_account'
-}));
+//POST
+router.post("/registro", registrarUsuario)
+router.post("/recuperarPassword", resetearPassword)
 
-router.get('/google/callback', 
-    passport.authenticate('google', { failureRedirect: '/auth/login' }),
-    googleCallback
-);
+router.post("/createUser", (req, res) =>
+    {
+        console.log("Se esta procesando una petición del tipo POST")
+        const nuevoUsuario = {
+            nombre:"Marco A. Ramírez",
+            correo:"marco@gmail.com"
+        }
 
-// ⚫ GITHUB 🔥
-router.get('/github', (req, res) => {
+        res.json({
+            status:200, 
+            message: `Se ha solicitado la creación de un nuevo usuario con nombre: ${nuevoUsuario.nombre} y correo: ${nuevoUsuario.correo}`
+        })
+    })
+    
+//PUT - Actualización Completa
+router.put("/actualizarOferta/",(req, res)=>{
+    console.log("Se esta procesando una petición del tipo PUT");
+    const mejorOfertaCompra =
+    {
+        clienteID: 5158,
+        propiedad: 1305,
+        montoOfertado: "$125,300.00"
+    }
+    
+    const nuevaOferta = 
+    {
+        clienteID: 1578,
+        propiedad: 1305,
+        montoOfertado: "$130,000.00"
+    }
 
-    const clientID = process.env.GITHUB_CLIENT_ID;
-    const redirectURI = encodeURIComponent('http://localhost:40537/auth/github/callback');
+    res.json({
+        status:200, 
+        message: `Se ha actualizado la mejor oferta, de un valor de ${mejorOfertaCompra.montoOfertado} a ${nuevaOferta.montoOfertado} por el cliente: ${mejorOfertaCompra.clienteID}`
+    })
+})
 
-    const url = `https://github.com/login/oauth/authorize
-    ?client_id=${clientID}
-    &redirect_uri=${redirectURI}
-    &scope=user:email
-    &force_verify=true`;
+//PATCH  - Actualización Parcial
+router.patch("/actualizarPassword/:nuevoPassword", (req, res)=>
+{
+    console.log("Se esta procesando una petición del tipo PATCH");
+    const usuario = {
+        nombre: "Damián Romero",
+        correo: "d.romero@gmail.com", 
+        password: "123456789"        
+    }
 
-    res.redirect(url.replace(/\s/g, ''));
-});
+    const {nuevoPassword} = req.params;
+    res.json({
+        status:200,
+        message: `La contraseña: ${usuario.password} ha sido actualizada a: ${nuevoPassword}`
+    })
+})
 
-router.get('/github/callback',
-    passport.authenticate('github', { failureRedirect: '/auth/login' }),
-    githubCallback
-);
+router.delete("/borrarPropiedad/:id", (req, res)=>{
+    console.log("Se esta procesando una petición del tipo DELETE");
+    const {id} = req.params;
+    res.json({
+        status:200, 
+        message: `Se ha eliminado la propiedad con id : ${id}`
+    })
+})
 
-router.get('/logout', logout);
+// ==============================
+// AUTENTICACIÓN CON GOOGLE
+// ==============================
 
-export default router;
+router.get("/google",
+    passport.authenticate("google", {
+        scope: ["profile", "email"]
+    })
+)
+
+router.get("/google/callback",
+    passport.authenticate("google", {
+        failureRedirect: "/auth/login"
+    }),
+    (req, res) => {
+        res.redirect("/")
+    }
+)
+
+
+// ==============================
+// AUTENTICACIÓN CON GITHUB
+// ==============================
+
+router.get("/github",
+    passport.authenticate("github", {
+        scope: ["user:email"]
+    })
+)
+
+router.get("/github/callback",
+    passport.authenticate("github", {
+        failureRedirect: "/auth/login"
+    }),
+    (req, res) => {
+        res.redirect("/")
+    }
+)
+
+export default router

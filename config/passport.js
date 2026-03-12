@@ -1,73 +1,144 @@
-import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Strategy as GitHubStrategy } from 'passport-github2';
-import Usuario from '../models/Usuarios.js';
-import bcrypt from 'bcrypt';
-import dotenv from 'dotenv';
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GitHubStrategy } from "passport-github2";
+import Usuario from "../models/Usuarios.js";
 
-dotenv.config();
 
-passport.serializeUser((user, done) => done(null, user.id));
+// ===============================
+// GOOGLE LOGIN
+// ===============================
 
-passport.deserializeUser(async (id, done) => {
-    const user = await Usuario.findByPk(id);
-    done(null, user);
+passport.use(
+    new GoogleStrategy(
+        {
+            clientID: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackURL: "/auth/google/callback"
+        },
+        async (accessToken, refreshToken, profile, done) => {
+
+            try {
+
+                const email = profile.emails[0].value;
+                const name = profile.displayName;
+
+                let usuario = await Usuario.findOne({
+                    where: { email }
+                });
+
+                if (!usuario) {
+
+                    usuario = await Usuario.create({
+                        name: name,
+                        email: email,
+                        password: "OAUTH_USER",
+                        confirmed: 1,
+                        token: null,
+                        token_expiration: null,
+                        reg_status: 1,
+                        last_login: new Date()
+                    });
+
+                } else {
+
+                    usuario.last_login = new Date();
+                    await usuario.save();
+
+                }
+
+                return done(null, usuario);
+
+            } catch (error) {
+                console.log(error);
+                return done(error, null);
+            }
+        }
+    )
+);
+
+
+// ===============================
+// GITHUB LOGIN
+// ===============================
+
+passport.use(
+    new GitHubStrategy(
+        {
+            clientID: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            callbackURL: "/auth/github/callback",
+            scope: ["user:email"]
+        },
+        async (accessToken, refreshToken, profile, done) => {
+
+            try {
+
+                const name = profile.username;
+
+                let email = null;
+
+                if (profile.emails && profile.emails.length > 0) {
+                    email = profile.emails[0].value;
+                } else {
+                    email = profile.username + "@github.com";
+                }
+
+                let usuario = await Usuario.findOne({
+                    where: { email }
+                });
+
+                if (!usuario) {
+
+                    usuario = await Usuario.create({
+                        name: name,
+                        email: email,
+                        password: "OAUTH_USER",
+                        confirmed: 1,
+                        token: null,
+                        token_expiration: null,
+                        reg_status: 1,
+                        last_login: new Date()
+                    });
+
+                } else {
+
+                    usuario.last_login = new Date();
+                    await usuario.save();
+
+                }
+
+                return done(null, usuario);
+
+            } catch (error) {
+                console.log(error);
+                return done(error, null);
+            }
+        }
+    )
+);
+
+
+// ===============================
+// SESSION
+// ===============================
+
+passport.serializeUser((usuario, done) => {
+    done(null, usuario.id);
 });
 
-const generarPasswordSeguro = async () => {
-    const salt = await bcrypt.genSalt(10);
-    return await bcrypt.hash(Math.random().toString(36), salt);
-};
+passport.deserializeUser(async (id, done) => {
 
-// GOOGLE
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/auth/google/callback'
-},
-async (accessToken, refreshToken, profile, done) => {
+    try {
 
-    let usuario = await Usuario.findOne({ where:{ email: profile.emails[0].value } });
+        const usuario = await Usuario.findByPk(id);
+        done(null, usuario);
 
-    if(!usuario){
-        usuario = await Usuario.create({
-            name: profile.displayName,
-            email: profile.emails[0].value,
-            password: await generarPasswordSeguro(),
-            proveedor: 'google',
-            proveedorId: profile.id,
-            confirmed: true
-        });
+    } catch (error) {
+
+        done(error, null);
+
     }
 
-    return done(null, usuario);
-}));
-
-// GITHUB
-passport.use(new GitHubStrategy({
-    clientID: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: '/auth/github/callback',
-    scope: ['user:email']
-},
-async (accessToken, refreshToken, profile, done) => {
-
-    let email = profile.emails?.[0]?.value || `${profile.username}@github.user`;
-
-    let usuario = await Usuario.findOne({ where:{ email } });
-
-    if(!usuario){
-        usuario = await Usuario.create({
-            name: profile.username,
-            email,
-            password: await generarPasswordSeguro(),
-            proveedor: 'github',
-            proveedorId: profile.id,
-            confirmed: true
-        });
-    }
-
-    return done(null, usuario);
-}));
+});
 
 export default passport;

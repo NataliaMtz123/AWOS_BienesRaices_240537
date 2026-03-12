@@ -1,410 +1,199 @@
-import { check, validationResult } from "express-validator";
-import Usuario from "../models/Usuarios.js";
-import { generarToken } from "../lib/tokens.js";
-import { emailRegistro } from "../lib/emails.js";//importacion 
-import { emailResetearPassword } from "../lib/emails.js";//importacion
-import jwt from "jsonwebtoken";
-import { where } from "sequelize";
+import {check, validationResult } from 'express-validator'
+import Usuario from '../models/Usuarios.js'
+import {generarToken} from '../lib/tokens.js'
+import {emailRegistro, emailResetearPassword} from '../lib/emails.js'
 
-// =============================
-// LOGIN
-// =============================
-const fromularioLogin = (req, res) => {
-    res.render("auth/login", {
-        pagina: "Inicia sesión con nosotros :)"
-    });
-};
+const formularioLogin = (req, res) => {
+     res.render("auth/login", {pagina: "Inicia sesión"});
+}
+const formularioRegistro = (req,res) =>
+{
+    res.render("auth/registro", {pagina: "Registrate con nosotros :)"});
+}
 
-// =============================
-// REGISTRO (FORM)
-// =============================
-const formularioRegistro = (req, res) => {
-    res.render("auth/registro", {
-        pagina: "Regístrate con nosotros :)"
-    });
-};
+const registrarUsuario = async(req,res) =>
+{
+    console.log("Intentando registrar a un Usuario Nuevo con los datos del formulario:");
+    /*console.log(req.body);*/
+    const {nombreUsuario:name, emailUsuario: email, passwordUsuario:password} = req.body 
 
-const formularioActualizarPassword = (req, res) => {
-    const { token } = req.params;
 
-    return res.render("auth/actualizarPassword", {
-        pagina: "Ingresa tu nueva contraseña",
-        token
-    });
-};
+    // Validación de los datos del formulario previo a registro en la BD
+    // Definir reglas de validacion
+    await check('nombreUsuario').notEmpty().withMessage("El nombre de la persona no puede ser vacío").run(req);
+    await check('emailUsuario').notEmpty().withMessage("El correo electrónico no puede ser vacío").isEmail().withMessage("El correo electrónico no tiene un formato adecuado").run(req)
+    await check('passwordUsuario').notEmpty().withMessage("La contraseña parece estar vacía").isLength({ min: 8 , max:30}).withMessage("La longitud de la contraseña debe ser entre 8 y 30 caractéres").run(req);
+    await check('confirmacionUsuario').equals(password).withMessage("Ambas contraseñas deben ser iguales").run(req);
 
-const actualizarPassword = async (req, res) => {
-    const { token } = req.params;
-    const { passwordUsuario, confirmacionUsuario } = req.body;
+    // aplicamos la reglas definidas
+    let resultadoValidacion = validationResult(req);
 
-    if (!passwordUsuario || passwordUsuario.length < 8) {
-        return res.render("auth/actualizarPassword", {
-            pagina: "Ingresa tu nueva contraseña",
-            token,
-            errores: [{ msg: "La contraseña debe tener al menos 8 caracteres." }]
-        });
+    // Verificar si el usuario no esta previamente registrado en la bd
+    const existeUsuario = await Usuario.findOne({where: {email}})
+  
+
+    if(existeUsuario)
+    {  res.render("auth/registro", { 
+            pagina: "Registrate con nosotros :) ", 
+            errores: [{msg:` Ya existe un usuario asociado al correo: ${email}`}],
+            usuario: { nombreUsuario: name,           
+            }});
     }
 
-    if (passwordUsuario !== confirmacionUsuario) {
-        return res.render("auth/actualizarPassword", {
-            pagina: "Ingresa tu nueva contraseña",
-            token,
-            errores: [{ msg: "Las contraseñas no coinciden." }]
-        });
-    }
 
-    const usuario = await Usuario.findOne({ where: { token } });
+    // Validar si hay errores en la recepción de datos , si no mandar a bd
 
-    if (!usuario) {
-        return res.render("templates/mensaje", {
-            title: "Token inválido",
-            msg: "El enlace para restablecer la contraseña no es válido o ya expiró."
-        });
-    }
-
-    usuario.password = passwordUsuario;
-    usuario.token = null;
-    await usuario.save();
-
-    return res.render("templates/mensaje", {
-        title: "Contraseña actualizada",
-        msg: "Tu contraseña ha sido actualizada correctamente. Ya puedes iniciar sesión."
-    });
-};
-
-// =============================
-// REGISTRAR USUARIO (CORREGIDO)
-// =============================
-const registrarUsuario = async (req, res) => {
-    // Extraer datos del formulario
-    const {
-        nombreUsuario,
-        correoUsuario,
-        contraseUsuario,
-        confirmarContraseUsuario    
-    } = req.body;
-
-    console.log('1. Datos recibidos:', { nombreUsuario, correoUsuario, contraseUsuario });
-
-    try {
-        // VALIDACIONES
-        await check("nombreUsuario")
-            .notEmpty()
-            .withMessage("El nombre no puede estar vacío")
-            .run(req);
-
-        await check("correoUsuario")
-            .isEmail()
-            .withMessage("Correo no válido")
-            .run(req);
-
-        await check("contraseUsuario")
-            .isLength({ min: 8 })
-            .withMessage("La contraseña debe tener mínimo 8 caracteres")
-            .run(req);
-
-        await check("confirmarContraseUsuario")
-            .equals(contraseUsuario)
-            .withMessage("Las contraseñas no coinciden")
-            .run(req);
-
-        const resultadoValidacion = validationResult(req);
-
-        // Si hay errores de validación
-        if (!resultadoValidacion.isEmpty()) {
-            return res.render("auth/registro", {
-                pagina: "Regístrate con nosotros :)",
-                errores: resultadoValidacion.array(),
-                usuario: {
-                    nombreUsuario,
-                    correoUsuario
-                }
-            });
-        }
-
-        // Verificar si el usuario ya existe
-        console.log('2. Buscando usuario con email:', correoUsuario);
-        
-        const existeUsuario = await Usuario.findOne({
-            where: { email: correoUsuario }
-        });
-
-        if (existeUsuario) {
-            console.log('3. Usuario ya existe');
-            return res.render("auth/registro", {
-                pagina: "Error al crear tu cuenta",
-                errores: [
-                    { msg: `Ya existe un usuario asociado al correo: ${correoUsuario}` }
-                ]
-                
-            });
-        }
-
-        //const {nombreUsuario:name, correoUsuario:email, contraseUsuario:password}=res.body;
-        // Crear usuario (mapeando los nombres correctamente)
-        console.log('4. Creando usuario con datos mapeados:', {
-            name: nombreUsuario,
-            email: correoUsuario,
-            password: contraseUsuario,
+    if(resultadoValidacion.isEmpty())
+    {
+        const data =
+        {
+            name, 
+            email, 
+            password,
             token: generarToken()
-        });
-
-        const data = {
-            name:nombreUsuario,
-            email:correoUsuario,
-            password:contraseUsuario,
-            token: generarToken()
-        };
-
+        }
         const usuario = await Usuario.create(data);
-        
-        console.log('5. Usuario creado exitosamente, ID:', usuario.id);
 
-        //Enviar el correo electronico
+        //Enviar el correo electrónico
         emailRegistro({
-    nombre: usuario.name,  // Cambiado de nombreUsuario a nombre
-    email: usuario.email,  // Cambiado de correoUsuario a email
-    token: usuario.token
-});
-
-        // Mensaje de éxito
-        return res.render("templates/mensaje", {
-            title: "¡Bienvenid@ a Bienes Raíces!",
-            msg: `La cuenta asociada al correo ${correoUsuario} ha sido creada exitosamente. Por favor, revisa tu correo para confirmar tu cuenta.`,
-            errores: []
-        });
-
-    } catch (error) {
-        console.error('ERROR COMPLETO:', error);
-
-        // Manejo específico de errores de Sequelize
-        if (error.name === 'SequelizeUniqueConstraintError') {
-            return res.render("auth/registro", {
-                pagina: "Error al crear tu cuenta",
-                errores: [{ msg: "El correo electrónico ya está registrado" }],
-                usuario: {
-                    nombreUsuario,
-                    correoUsuario
-                }
-            });
-        }
-
-        if (error.name === 'SequelizeValidationError') {
-            const errores = error.errors.map(err => ({
-                msg: err.message
-            }));
-            
-            return res.render("auth/registro", {
-                pagina: "Error al crear tu cuenta",
-                errores: errores,
-                usuario: {
-                    nombreUsuario,
-                    correoUsuario
-                }
-            });
-        }
-
-        // Error genérico
-        return res.render("auth/registro", {
-            pagina: "Error al crear tu cuenta",
-            errores: [{ msg: "Hubo un error al registrar el usuario. Por favor, intenta de nuevo." }],
-            usuario: {
-                nombreUsuario,
-                correoUsuario
-            }
-        });
-    }
-};
-
-    const paginaConfirmacion = async (req, res) => {
-    const {token:tokenCuenta} = req.params
-    console.log("Confirmando la cuenta asociada al token:", tokenCuenta);
-
-    //confirmar que el token existe
-    const usuarioToken = await(Usuario.findOne({where: { token: tokenCuenta }})) ;
-    console.log(usuarioToken);
-
-    if(!usuarioToken){
-        res.render("templates/mensaje", {
-            title: "Error al confirmar tu cuenta",
-            msg: "El token de confirmación es inválido o ha expirado.",
-        buttonVisible: false,
-        buttonText: null,
-        buttonLink: null
-        });
-    }
-    //Actualizar los datos del usaurio
-    usuarioToken.token = null;
-    usuarioToken.confirmed = true;
-    usuarioToken.save();
-
-    res.render("templates/mensaje", {
-            title: "Confirmacion exitosa",
-            msg: `La cuenta de ${usuarioToken.name}, asociada al correo ${usuarioToken.email}, ha sido confirmada exitosamente.`,
-        buttonVisible: true,
-        buttonText: "Ingresar a Bienes Raíces - 240537",
-        buttonLink: "/auth/login"});
-};
-
-// =============================
-// PERFIL
-// =============================
-const perfilUsuario = (req, res) => {
-    if (!req.user) {
-        return res.redirect("/auth/login");
-    }
-
-    res.render("perfil", {
-        pagina: "Mi Perfil",
-        usuario: req.user
-    });
-};
-
-// =============================
-// GOOGLE CALLBACK
-// =============================
-const googleCallback = (req, res) => {
-    const token = jwt.sign(
-        { id: req.user.id, email: req.user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "30d" }
-    );
-
-    res.cookie("_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 30 * 24 * 60 * 60 * 1000
-    });
-
-    res.redirect("/auth/perfil");
-};
-
-// =============================
-// GITHUB CALLBACK
-// =============================
-const githubCallback = (req, res) => {
-    const token = jwt.sign(
-        { id: req.user.id, email: req.user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "30d" }
-    );
-
-    res.cookie("_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 30 * 24 * 60 * 60 * 1000
-    });
-
-    res.redirect("/auth/perfil");
-};
-
-// =============================
-// LOGOUT
-// =============================
-const logout = (req, res, next) => {
-    const proveedor = req.user?.proveedor;
-
-    req.logout(err => {
-        if (err) return next(err);
-
-        req.session.destroy(() => {
-            // borrar sesión
-            res.clearCookie("connect.sid");
-            // borrar JWT
-            res.clearCookie("_token");
-
-            if (proveedor === "github") {
-                return res.redirect("https://github.com/logout");
-            }
-
-            if (proveedor === "google") {
-                return res.redirect("/auth/login");
-            }
-
-            return res.redirect("/auth/login");
-        });
-    });
-};
-
-// =============================
-// RESET PASSWORD
-// =============================
-const resetearPassword = async (req, res) => {
-
-    // GET -> mostrar formulario
-    if (req.method === "GET") {
-        return res.render("auth/recuperarPassword", {
-            pagina: "Recuperar contraseña"
-        });
-    }
-
-    // POST -> procesar formulario
-    const { emailUsuario } = req.body;
-
-    console.log(`El usuario con correo: ${emailUsuario} solicita resetear su contraseña`);
-
-    // =============================
-    // Validación 1
-    // =============================
-    const usuario = await Usuario.findOne({
-        where: { email: emailUsuario }
-    });
-
-    // SELECT email FROM tb_usuarios WHERE email = correoUsuario
-
-    if (!usuario) {
-        return res.render("templates/mensaje", {
-            title: "Error buscando la cuenta",
-            msg: `No existe ninguna cuenta asociada al correo: ${emailUsuario}`,
-            buttonVisible: true,
-        buttonText: "Inténtalo de nuevo",
-        buttonLink: "/auth/recuperarPassword"
-        });
-    }
-
-    // Si el usuario existe pero no ha confirmado su cuenta
-    if (!usuario.confirmed) {
-        return res.render("templates/mensaje", {
-            title: "Cuenta no validada",
-            msg: `La cuenta asociada al correo: ${emailUsuario} no ha sido confirmada. Revisa tu correo para encontrar la liga de validación.`
-        });
-    }
-
-   else {
-        // actualizar el token y guardarlo
-        usuario.token = generarToken();
-        await usuario.save();
-
-        // Enviar el correo electronico
-        await emailResetearPassword({
             nombre: usuario.name,
             email: usuario.email,
             token: usuario.token
-        });
+        })
 
-        // responder con una vista de correo enviado
-        return res.render("templates/mensaje", {
-            title: "Revisa tu correo",
-            msg: `Hemos enviado un correo a ${usuario.email} con instrucciones para recuperar tu contraseña`,
-            buttonVisible: false
-        });
+
+        res.render("templates/mensaje",{
+            title: "¡Bienvenid@ a BienesRaíces!",
+            msg: `La cuenta asociada al correo: ${email}, se ha creado exitosamente, te pedimos confirmar tu a través del correo electrónico que te hemos enviado. `
+        })
+
     }
-};
+    else 
+        res.render("auth/registro", { 
+            pagina: "Error al interar crear una cuenta.", 
+            errores: resultadoValidacion.array(), 
+            usuario: { nombreUsuario: name,
+                emailUsuario: email
+            }});
+    
+            
+}
+
+const paginaConfirmacion = async(req, res) =>
+{
+     const {token:tokenCuenta} = req.params
+     console.log("Confirmando la cuenta asociada al token: ", tokenCuenta);
+     
+     //Confirmar si el token existe en la BD 
+     const usuarioToken = await(Usuario.findOne({where:{token:tokenCuenta }}))
+     console.log(usuarioToken);
+
+     if(!usuarioToken)
+     {
+        res.render("templates/mensaje",{
+            title: "Error al confirmar la cuenta",
+            msg: `El código de verificación (no es válido), por favor intentalo de nuevo.`,
+            buttonVisibility: false,
+            buttonText: null,
+            buttonURL: null});
+     }
+
+     else {
+     // Actualizar los datos del usuario.
+     usuarioToken.token=null;
+     usuarioToken.confirmed=true;
+     usuarioToken.save();
+    
+     res.render("templates/mensaje",{
+            title: "Confirmación exitosa",
+            msg: `La cuenta de:  ${usuarioToken.name}, asociada al correo electrónico: ${usuarioToken.email} se ha confirmado, ahora ya puedes ingresar a la plataforma.`,buttonVisibility: true,
+            buttonText: "Ingresar a BienesRaices-MATRICULA!",
+            buttonURL: "/auth/login"});
+    }
+
+}
+
+const formularioRecuperacion = (req,res) =>
+{
+    res.render("auth/recuperarPassword", {pagina: "Te ayudamos a restaurar tu contraseña"});
+}
+
+const formularioActualizacionPassword = (req,res) =>
+{
+    res.render("auth/resetearPassword", {pagina: "Ingresa tu nueva contraseña"});
+}
 
 
-// =============================
-// EXPORTACIONES
-// =============================
-export {
-    fromularioLogin,
-    formularioRegistro,
-    registrarUsuario,
-    googleCallback,
-    paginaConfirmacion,
-    githubCallback,
-    logout,
-    perfilUsuario,
-    resetearPassword,
-    formularioActualizarPassword,
-    actualizarPassword
-};
+
+const resetearPassword = async(req, res) =>
+{
+    const {emailUsuario:usuarioSolicitante} = req.body
+    console.log(`El usuario con correo: ${usuarioSolicitante} esta solicitando un reseteo de contraseña.`)
+
+    const {emailUsuario: email} = req.body 
+
+     // Validaciones del Frontend 
+     await check('emailUsuario').notEmpty().withMessage("El correo electrónico no puede ser vacío").isEmail().withMessage("El correo electrónico no tiene un formato adecuado").run(req)
+    
+     let resultadoValidacion = validationResult(req);
+
+     if(!resultadoValidacion.isEmpty())
+     {
+         res.render("auth/recuperarPassword", { 
+            pagina: "Error, correo inválido", 
+            errores: resultadoValidacion.array(), 
+            usuario: { emailUsuario: email  }});
+     }
+
+    // Validación 1
+    const usuario = await Usuario.findOne({where: { email: usuarioSolicitante}});
+    // SELECT email FROM tb_users WHERE email =  usuarioSolicitante;   // SQL Injection
+    if(!usuario)
+    {
+            res.render("templates/mensaje",{
+            title: "Error, buscando la cuenta",
+            msg: `No se ha encontrado ninguna cuenta asociada al correo: ${usuarioSolicitante}`,
+            buttonVisibility: true,
+            buttonText: "Intentalo de nuevo",
+            buttonURL: "/auth/recuperarPassword"
+            });
+    
+    }
+    else
+    {
+        //Validacion 2
+        if (!usuario.confirmed)         
+        {
+            res.render("templates/mensaje",{
+            title: "Error, la cuenta no esta confirmada",
+            msg: `La  cuenta asociada al correo: ${usuarioSolicitante}, no ha sido validad a través de la liga segura enviada al correo electrónico.`,
+            buttonVisibility: true,
+            buttonText: "Intentalo de nuevo",
+            buttonURL: "/auth/recuperarPassword"
+            });
+        }
+
+        else
+        {
+            // Actualizar el token
+            usuario.token = generarToken();
+            usuario.save();
+            // Enviar el token por correo   
+            emailResetearPassword({
+                nombre: usuario.name,
+                email: usuario.email,
+                token: usuario.token
+            })
+
+            // Responder con una vista de correo enviada
+            res.render("templates/mensaje",{
+                title: "Correo para la Restauración de Contraseñas",
+            msg: `Un paso más, te hemos enviado un correo electrónico con la liga segura para la restauración de tu contraseña.`,
+            buttonVisibility: false});
+        }
+   
+             
+        }
+}
+
+export { formularioLogin, formularioRegistro, registrarUsuario, formularioRecuperacion, paginaConfirmacion, resetearPassword, formularioActualizacionPassword}
