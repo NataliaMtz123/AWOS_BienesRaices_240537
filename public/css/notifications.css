@@ -1,0 +1,97 @@
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+}
+
+.notification {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: slideIn 0.3s ease-out;
+    position: relative;
+}
+
+.notification.error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification.success {
+    border-left: 4px solid #10b981;
+}
+
+.notification.warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.notification.info {
+    border-left: 4px solid #3b82f6;
+}
+
+.notification-content {
+    padding: 16px;
+    padding-bottom: 12px;
+    font-size: 14px;
+    color: #1f2937;
+}
+
+.notification-progress {
+    height: 4px;
+    width: 100%;
+    background: #e5e7eb;
+}
+
+.notification-progress-bar {
+    height: 100%;
+    width: 100%;
+    animation: progress 5s linear forwards;
+}
+
+.notification.error .notification-progress-bar {
+    background: #ef4444;
+}
+
+.notification.success .notification-progress-bar {
+    background: #10b981;
+}
+
+.notification.warning .notification-progress-bar {
+    background: #f59e0b;
+}
+
+.notification.info .notification-progress-bar {
+    background: #3b82f6;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes progress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}

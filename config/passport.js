@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Strategy as GitHubStrategy } from "passport-github2";
+import { Strategy as FacebookStrategy } from "passport-facebook";
 import Usuario from "../models/Usuarios.js";
 
 
@@ -58,29 +58,29 @@ passport.use(
 
 
 // ===============================
-// GITHUB LOGIN
+// FACEBOOK LOGIN
 // ===============================
 
 passport.use(
-    new GitHubStrategy(
+    new FacebookStrategy(
         {
-            clientID: process.env.GITHUB_CLIENT_ID,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET,
-            callbackURL: "/auth/github/callback",
-            scope: ["user:email"]
+            clientID: process.env.FACEBOOK_APP_ID,
+            clientSecret: process.env.FACEBOOK_APP_SECRET,
+            callbackURL: "/auth/facebook/callback",
+            profileFields: ["id", "displayName", "emails"]
         },
         async (accessToken, refreshToken, profile, done) => {
 
             try {
 
-                const name = profile.username;
+                const name = profile.displayName;
 
                 let email = null;
 
                 if (profile.emails && profile.emails.length > 0) {
                     email = profile.emails[0].value;
                 } else {
-                    email = profile.username + "@github.com";
+                    email = profile.id + "@facebook.com";
                 }
 
                 let usuario = await Usuario.findOne({

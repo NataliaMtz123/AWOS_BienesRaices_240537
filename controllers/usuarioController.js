@@ -2,6 +2,7 @@ import {check, validationResult } from 'express-validator'
 import Usuario from '../models/Usuarios.js'
 import {generarToken} from '../lib/tokens.js'
 import {emailRegistro, emailResetearPassword} from '../lib/emails.js'
+import bcrypt from "bcrypt";    
 
 const formularioLogin = (req, res) => {
      res.render("auth/login", {pagina: "Inicia sesión"});
@@ -107,7 +108,7 @@ const paginaConfirmacion = async(req, res) =>
      res.render("templates/mensaje",{
             title: "Confirmación exitosa",
             msg: `La cuenta de:  ${usuarioToken.name}, asociada al correo electrónico: ${usuarioToken.email} se ha confirmado, ahora ya puedes ingresar a la plataforma.`,buttonVisibility: true,
-            buttonText: "Ingresar a BienesRaices-MATRICULA!",
+            buttonText: "Ingresar a BienesRaices-240537!",
             buttonURL: "/auth/login"});
     }
 
@@ -118,9 +119,17 @@ const formularioRecuperacion = (req,res) =>
     res.render("auth/recuperarPassword", {pagina: "Te ayudamos a restaurar tu contraseña"});
 }
 
-const formularioActualizacionPassword = (req,res) =>
+const formularioActualizacionPassword = async(req,res) =>
 {
-    res.render("auth/resetearPassword", {pagina: "Ingresa tu nueva contraseña"});
+    console.log(req.body)
+    const {token}=req.params;
+    console.log(`El usuario con token:${token} esta intentando actualizar su contraseña `);
+
+    const usuarioSolicitante = await Usuario.findOne({where:{token}});
+    console.log(`El usuario dueño del token es: ${usuarioSolicitante.email}`);
+    res.render("auth/resetearPassword", {pagina: "Ingresa tu nueva contraseña",
+        email:usuarioSolicitante.email
+    });
 }
 
 
@@ -196,4 +205,73 @@ const resetearPassword = async(req, res) =>
         }
 }
 
-export { formularioLogin, formularioRegistro, registrarUsuario, formularioRecuperacion, paginaConfirmacion, resetearPassword, formularioActualizacionPassword}
+const actualizarPassword=async(req,res)=>{
+    const {emailSolicitante:email,passwordUsuario:password }=req.body
+    console.log(`Actualizando la contraseña del usuario con email: ${email} a nivel backend - base de datos`)
+   
+    await check('passwordUsuario').notEmpty().withMessage("La contraseña parece estar vacia").isLength({min:8,maz:30}).withMessage("La longitud de la contraseña debe ser entre 8 y 10 caractéres").run(req);
+    await check('confirmacionUsuario').equals(password).withMessage("Ambas contraseñas deben ser iguales").run(req);
+   
+    //aplicamos las reglas definidas
+    let resultadoValidacion=validationResult(req);
+     if(!resultadoValidacion.isEmpty())
+     {
+         res.render("auth/resetearPassword", { 
+            pagina: "Error, al intentar actualizar la contraseña", 
+            errores: resultadoValidacion.array()});
+     }
+    
+}
+
+//crear contraseña cuando el usuario inicia sesion con google o facebook (se va a almacenar en la base de datos esta contraseña)
+const formularioCrearPassword = async (req,res)=>{
+
+    const {id} = req.params; // ← agregado
+
+    let usuario = null;
+
+    if(id){
+        usuario = await Usuario.findByPk(id); // ← agregado
+    }
+
+    res.render("auth/crearPassword",{
+        pagina:"Crear contraseña",
+        email: usuario ? usuario.email : null, // ← agregado
+        id: id // ← agregado
+    })
+}
+
+const guardarPassword = async (req,res)=>{
+
+    const {id} = req.params;
+    const {password, password2} = req.body;
+
+    if(password !== password2){
+        return res.render("auth/crearPassword",{
+            pagina:"Crea tu contraseña",
+            error:"Las contraseñas no coinciden"
+        });
+    }
+
+    const usuario = await Usuario.findByPk(id);
+
+    const salt = await bcrypt.genSalt(10);
+    usuario.password = await bcrypt.hash(password, salt);
+
+    await usuario.save();
+
+    res.redirect("/auth/dashboard");
+}
+
+export {
+ formularioLogin,
+ guardarPassword,
+ actualizarPassword,
+ formularioRegistro,
+ registrarUsuario,
+ formularioRecuperacion,
+ paginaConfirmacion,
+ resetearPassword,
+ formularioActualizacionPassword,
+ formularioCrearPassword
+}
