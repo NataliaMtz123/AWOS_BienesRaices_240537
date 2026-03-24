@@ -1,0 +1,12 @@
+extends ../layout/index
+
+block contenido
+    .min-h-screen.flex.items-center.justify-center.bg-pink-50
+        .bg-white.shadow-2xl.rounded-2xl.p-10.text-center.max-w-lg.w-full
+
+            h1.text-4xl.font-extrabold.text-pink-600.mb-4 💖 Bienvenido a Bienes Raíces
+
+            p.text-gray-600.mb-6 Has accedido correctamente a la plataforma.
+
+            a(href="/auth/logout" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-3 px-6 rounded-xl shadow-lg uppercase transition-all duration-200 inline-block")
+                | Cerrar sesión

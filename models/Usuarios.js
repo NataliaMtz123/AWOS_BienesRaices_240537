@@ -43,7 +43,7 @@ const Usuario = db.define('Usuario', {
         },
         len: {
           args: [8, 100],
-          msg: 'La contraseña debe tener al menos 6 caracteres'
+          msg: 'La contraseña debe tener al menos 8 caracteres'
         }
       }
     },
@@ -71,6 +71,34 @@ const Usuario = db.define('Usuario', {
       type: DataTypes.DATE,
       allowNull: true,
       field: 'last_login'
+    },
+    // NUEVOS CAMPOS PARA BLOQUEO
+    loginAttempts: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        field: 'login_attempts'
+    },
+    accountLocked: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'account_locked'
+    },
+    lastFailedAttempt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'last_failed_attempt'
+    },
+    unlockCode: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        field: 'unlock_code'
+    },
+    unlockCodeExpiration: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'unlock_code_expiration'
     }
   }, {
     tableName: 'tb_users',
@@ -80,67 +108,28 @@ const Usuario = db.define('Usuario', {
     updatedAt: 'updated_at',
 
     hooks: {
-      // Hash de contraseña antes de crear
-      beforeCreate: async (usuario) => {
-        if (usuario.password) {
-          const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || 10);
-          usuario.password = await bcrypt.hash(usuario.password, salt);
-        }
-      },
-      
-      // Hash de contraseña antes dez actualizar (si cambió)
-      beforeUpdate: async (usuario) => {
-        if (usuario.changed('password')) {
-          const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || 10);
-          usuario.password = await bcrypt.hash(usuario.password, salt);
-        }
-      }
+  // Hash de contraseña antes de crear
+  beforeCreate: async (usuario) => {
+    if (usuario.password) {
+      const salt = await bcrypt.genSalt(10);
+      usuario.password = await bcrypt.hash(usuario.password, salt);
     }
-  });
-
-  /*
+  },
+  
+  // Hash de contraseña antes de actualizar (si cambió)
+  beforeUpdate: async (usuario) => {
+    if (usuario.changed('password')) {
+      const salt = await bcrypt.genSalt(10);
+      usuario.password = await bcrypt.hash(usuario.password, salt);
+    }
+  }
+}
+  }
+)
+  
   // Métodos de instancia
   Usuario.prototype.validarPassword = async function(password) {
     return await bcrypt.compare(password, this.password);
   };
-
-  Usuario.prototype.generarTokenRecuperacion = function() {
-    // Generar token aleatorio
-    const token = crypto.randomBytes(20).toString('hex');
-    this.tokenRecuperacion = token;
-    // Token válido por 1 hora
-    this.tokenExpiracion = new Date(Date.now() + 3600000);
-    return token;
-  };
-
-  Usuario.prototype.validarTokenRecuperacion = function(token) {
-    return this.tokenRecuperacion === token && 
-           this.tokenExpiracion > new Date();
-  };
-
-  Usuario.prototype.limpiarTokenRecuperacion = function() {
-    this.tokenRecuperacion = null;
-    this.tokenExpiracion = null;
-  };
-
-  // Métodos estáticos
-  Usuario.findByEmail = function(email) {
-    return this.findOne({ 
-      where: { 
-        email: email,
-        regStatus: true 
-      } 
-    });
-  };
-
-  Usuario.findByTokenRecuperacion = function(token) {
-    return this.findOne({
-      where: {
-        tokenRecuperacion: token,
-        tokenExpiracion: { [sequelize.Sequelize.Op.gt]: new Date() },
-        regStatus: true
-      }
-    });
-  };*/
 
   export default Usuario;

@@ -9,7 +9,12 @@ import {
     formularioActualizacionPassword,
     actualizarPassword,
     guardarPassword,
-    formularioCrearPassword   
+    formularioCrearPassword,
+    autenticarUsuario,
+    // NUEVAS FUNCIONES PARA DESBLOQUEO
+    mostrarDesbloqueo,
+    desbloquearCuenta,
+    reenviarCodigoDesbloqueo
 } from '../controllers/usuarioController.js'
 import passport from '../config/passport.js'
 import bcrypt from "bcrypt";
@@ -24,15 +29,23 @@ router.get("/recuperarPassword", formularioRecuperacion)
 router.get("/confirma/:token", paginaConfirmacion)
 router.get("/actualizarPassword/:token", formularioActualizacionPassword)
 router.get("/crearPassword", formularioCrearPassword); 
-router.get("/crearPassword/:id", formularioCrearPassword); 
+router.get("/crearPassword/:id", formularioCrearPassword);
+
+// ========== NUEVAS RUTAS PARA DESBLOQUEO ==========
+router.get("/desbloquear", mostrarDesbloqueo);           // Formulario sin código
+router.get("/desbloquear/:codigo", mostrarDesbloqueo);   // Formulario con código precargado
 
 //POST
+router.post("/login", autenticarUsuario)
 router.post("/registro", registrarUsuario)
 router.post("/recuperarPassword", resetearPassword)
 router.post("/actualizarPassword", actualizarPassword)
 router.post("/crearPassword", guardarPassword) 
 router.post("/crearPassword/:id", guardarPassword);
 
+// ========== NUEVAS RUTAS POST PARA DESBLOQUEO ==========
+router.post("/desbloquear", desbloquearCuenta);
+router.post("/reenviar-codigo", reenviarCodigoDesbloqueo);
 
 // ==============================
 // AUTENTICACIÓN CON GOOGLE
@@ -95,4 +108,20 @@ router.get("/dashboard", (req,res)=>{
         user: req.user
     })
 })
+router.get("/bienvenida", (req, res) => {
+    res.render("auth/bienvenida", {
+        user: req.user
+    });
+});
+router.get("/inicio", (req, res) => {
+    res.render("auth/inicio", {
+        user: req.user
+    });
+});
+router.get("/logout", (req, res) => {
+    req.logout(() => {
+        res.redirect("/auth/login");
+    });
+});
+
 export default router
