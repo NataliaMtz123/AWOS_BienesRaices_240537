@@ -8,6 +8,9 @@ html(lang="es")
         link(rel="stylesheet", href="/css/styles.css") 
 
     body.min-h-screen.bg-gray-100
+        if(header_superior)
+            include header
+            .container.mx-auto
         main(class="mx-auto container mt-5 px-2")
             block contenido 
 
