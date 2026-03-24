@@ -1,29 +1,14 @@
 doctype html 
 html(lang="es")
-    head
+    head 
         meta(charset="UTF-8")
-        meta(http-equiv="X-UA-Compatible" content="IE=edge")
-        meta(name="viewport" content="width=device-width, initial-scale=1.0")
-        title .: BienesRaíces :. - 240537 | #{pagina}
-        link(rel="stylesheet", href="/css/styles.css")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport" content="width=device-width, intial-scale=1.0")
+        title .: BienesRaices :. - 240537 | #{pagina}
+        link(rel="stylesheet", href="/css/styles.css") 
 
     body.min-h-screen.bg-gray-100
-        main(class="mx-auto container mt-10 px-20")
-            block contenido
+        main(class="mx-auto container mt-5 px-2")
+            block contenido 
 
-        script.
-            document.addEventListener('DOMContentLoaded', function(){
-
-                setTimeout(()=>{
-                    document.querySelectorAll('.alerta').forEach(alerta=>{
-                        alerta.remove();
-                    });
-                },3000);
-
-                document.querySelectorAll('.cerrar').forEach(btn=>{
-                    btn.addEventListener('click', function(){
-                        this.closest('.alerta').remove();
-                    });
-                });
-
-            });
+    

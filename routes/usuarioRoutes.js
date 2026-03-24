@@ -1,56 +1,98 @@
 import express from 'express'
-import passport from 'passport';
-
 import { 
-    fromularioLogin, 
-    formularioRegistro, 
-    registrarUsuario, 
+    formularioLogin,
+    formularioRegistro,
+    registrarUsuario,
+    formularioRecuperacion,
     paginaConfirmacion,
-    googleCallback, 
-    githubCallback, 
-    logout,
-    perfilUsuario
-} from '../controllers/usuarioController.js'; 
+    resetearPassword,
+    formularioActualizacionPassword,
+    actualizarPassword,
+    guardarPassword,
+    formularioCrearPassword   
+} from '../controllers/usuarioController.js'
+import passport from '../config/passport.js'
+import bcrypt from "bcrypt";
 
 const router = express.Router();
 
-router.get("/login", fromularioLogin);
-router.get("/registro", formularioRegistro);
-router.post("/registro", registrarUsuario);
-router.get("/perfil", perfilUsuario);
-router.get("/confirmar/:token", paginaConfirmacion);
+// Definir los ENDPOINTS
+// GET
+router.get("/login", formularioLogin)
+router.get("/registro", formularioRegistro)
+router.get("/recuperarPassword", formularioRecuperacion)
+router.get("/confirma/:token", paginaConfirmacion)
+router.get("/actualizarPassword/:token", formularioActualizacionPassword)
+router.get("/crearPassword", formularioCrearPassword); 
+router.get("/crearPassword/:id", formularioCrearPassword); 
 
-// 🔵 GOOGLE
-router.get('/google', passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    prompt: 'select_account'
-}));
+//POST
+router.post("/registro", registrarUsuario)
+router.post("/recuperarPassword", resetearPassword)
+router.post("/actualizarPassword", actualizarPassword)
+router.post("/crearPassword", guardarPassword) 
+router.post("/crearPassword/:id", guardarPassword);
 
-router.get('/google/callback', 
-    passport.authenticate('google', { failureRedirect: '/auth/login' }),
-    googleCallback
+
+// ==============================
+// AUTENTICACIÓN CON GOOGLE
+// ==============================
+
+router.get("/google",
+    passport.authenticate("google", {
+        scope: ["profile", "email"]
+    })
+)
+
+router.get("/google/callback",
+    passport.authenticate("google", {
+        failureRedirect: "/auth/login"
+    }),
+    async (req, res) => {
+
+        const esOauth = await bcrypt.compare("OAUTH_USER", req.user.password);
+
+        if(esOauth){
+            return res.redirect(`/auth/crearPassword/${req.user.id}`);
+        }
+
+        res.redirect("/auth/dashboard");
+    }
 );
 
-// ⚫ GITHUB 🔥
-router.get('/github', (req, res) => {
 
-    const clientID = process.env.GITHUB_CLIENT_ID;
-    const redirectURI = encodeURIComponent('http://localhost:40537/auth/github/callback');
+// ==============================
+// AUTENTICACIÓN CON FACEBOOK
+// ==============================
 
-    const url = `https://github.com/login/oauth/authorize
-    ?client_id=${clientID}
-    &redirect_uri=${redirectURI}
-    &scope=user:email
-    &force_verify=true`;
+router.get("/facebook",
+    passport.authenticate("facebook", {
+        scope: ["email"]
+    })
+)
 
-    res.redirect(url.replace(/\s/g, ''));
-});
+router.get("/facebook/callback",
+    passport.authenticate("facebook", {
+        failureRedirect: "/auth/login"
+    }),
+    (req, res) => {
 
-router.get('/github/callback',
-    passport.authenticate('github', { failureRedirect: '/auth/login' }),
-    githubCallback
+        if(req.user.password === "OAUTH_USER"){
+            return res.redirect(`/auth/crearPassword/${req.user.id}`);
+        }
+
+        res.redirect("/auth/dashboard");
+    }
 );
 
-router.get('/logout', logout);
 
-export default router;
+// ==============================
+// MIS PROPIEDADES
+// ==============================
+
+router.get("/dashboard", (req,res)=>{
+    res.render("propiedades/dashboard",{
+        user: req.user
+    })
+})
+export default router

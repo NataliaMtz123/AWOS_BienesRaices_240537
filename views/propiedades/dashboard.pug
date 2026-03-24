@@ -1,0 +1,113 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1.0")
+        title Perfil de Usuario
+        link(href="/css/output.css" rel="stylesheet")
+
+    body.bg-gradient-to-br.from-gray-50.to-gray-100.min-h-screen.p-4
+        .max-w-6xl.mx-auto
+
+            // Header
+            .flex.justify-between.items-center.mb-8
+                h1.text-3xl.font-bold.text-gray-800 Dashboard
+                a.bg-red-500.hover.bg-red-600.text-white.px-6.py-2.rounded-xl.font-semibold.transition.duration-300(href="/auth/login") Cerrar Sesión
+
+            // Verificar si user existe
+            if user
+                // Perfil del Usuario
+                .bg-white.rounded-2xl.shadow-xl.p-8.mb-8
+                    .flex.flex-col.md.flex-row.items-center.gap-8
+
+                        // Avatar
+                        .relative
+                            if user.photos && user.photos.length > 0 && user.photos[0]
+                                img.w-48.h-48.rounded-full.border-4.border-blue-100.shadow-lg(
+                                    src=user.photos[0].value
+                                    alt="Avatar"
+                                )
+                            else
+                                .w-48.h-48.rounded-full.bg-gray-200.flex.items-center.justify-center.border-4.border-blue-100
+                                    span.text-6xl.text-gray-500= user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'
+
+                            .absolute.bottom-4.right-4.bg-green-500.w-6.h-6.rounded-full.border-2.border-white
+
+                        // Información
+                        .flex-1.text-center.md.text-left
+                            h2.text-4xl.font-bold.text-gray-800.mb-2= user.displayName || "Usuario"
+
+                            p.text-gray-600.text-lg.mb-4
+                                | Autenticado con 
+                                span.font-semibold= user.provider || "Proveedor desconocido"
+
+                            .grid.grid-cols-1.md.grid-cols-3.gap-4.mt-6
+
+                                .bg-blue-50.p-4.rounded-xl
+                                    p.text-sm.text-gray-600 ID de Usuario
+                                    p.font-mono.text-gray-800.truncate= user.id || "No disponible"
+
+                                if user.emails && user.emails.length > 0 && user.emails[0]
+                                    .bg-green-50.p-4.rounded-xl
+                                        p.text-sm.text-gray-600 Email
+                                        p.text-gray-800.truncate= user.emails[0].value
+
+                                .bg-purple-50.p-4.rounded-xl
+                                    p.text-sm.text-gray-600 Proveedor
+                                    p.text-gray-800= user.provider || "No especificado"
+
+                // Contenido API
+                .bg-white.rounded-2xl.shadow-xl.p-8
+                    h3.text-2xl.font-bold.text-gray-800.mb-6
+                        | Contenido de #{user.provider || "la API"}
+
+                    #api-content.space-y-6
+
+                        .bg-gray-50.p-6.rounded-xl.border.border-gray-200
+                            .flex.items-center.gap-4.mb-4
+
+                                .w-12.h-12.rounded-full.bg-blue-100.flex.items-center.justify-center
+                                    svg.w-6.h-6.text-blue-600(fill="currentColor" viewBox="0 0 24 24")
+                                        path(d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z")
+
+                                div
+                                    p.font-semibold.text-gray-800 Información de la API
+                                    p.text-sm.text-gray-600
+                                        | Datos obtenidos de #{user.provider || "la plataforma"}
+
+                            p.text-gray-700
+                                | Esta sección mostraría contenido específico de la red social autenticada.
+
+                            .mt-4.text-sm.text-gray-500
+                                p Token de acceso disponible para realizar más peticiones.
+
+                // Botón cargar datos
+                .mt-8.text-center
+                    button.bg-blue-600.hover.bg-blue-700.text-white.px-8.py-3.rounded-xl.font-semibold.transition.duration-300.shadow-md.hover.shadow-lg(
+                        onclick="loadMoreContent()"
+                    ) Cargar Más Datos de la API
+            else
+                // Mensaje si no hay usuario
+                .bg-yellow-100.border-l-4.border-yellow-500.text-yellow-700.p-4.rounded-lg.mb-8
+                    p.font-bold No hay sesión activa
+                    p Por favor, inicia sesión para ver tu perfil.
+                .text-center
+                    a.bg-blue-500.hover.bg-blue-600.text-white.px-6.py-3.rounded-xl.font-semibold(href="/auth") Iniciar Sesión
+
+        script.
+            function loadMoreContent(){
+                const apiContent = document.getElementById('api-content');
+                
+                if(apiContent) {
+                    const newContent = document.createElement('div');
+                    newContent.className = 'bg-green-50 p-6 rounded-xl border border-green-200';
+
+                    newContent.innerHTML = `
+                        <h4 class="font-bold text-gray-800 mb-2">Datos adicionales cargados</h4>
+                        <p class="text-gray-700">Datos simulados obtenidos de la API.</p>
+                        <p class="text-sm text-gray-500 mt-2">Timestamp: ${new Date().toLocaleTimeString()}</p>
+                    `;
+
+                    apiContent.appendChild(newContent);
+                }
+            }
