@@ -30,7 +30,7 @@ gestionarse debidamente en el uso del control de versiones y ramas progresivas.<
 | 5.  | ORM's y Bases de datos | 7 | ✅ Finalizado. |  
 | 6.  | Inertando Registros en la Tabla Uusarios |  20|  ✅ Finalizado.|  
 | 7.  | Implemnetación de la Funcionalidad (Feature) Recuperación de Contraseña (Password Recovery) | 20 | ✅ Finalizado. |  
-| 8.  | Autentificación de Usuarios (auth) |  ❌|  ❌|
+| 8.  | Autentificación de Usuarios (auth) |  8|  ✅ Finalizado.|
 | 9.  | Definición de clase Propiedades (property) | ❌ |  ❌| 
 | 10.  | Operaciones CRUD (Create, Read, Update, Delete) de las Propiedades| ❌ | ❌ | 
 | 11.  |  Proteccion de Rutas y Validación de Tokes de Sesión (JWT)|❌  |  ❌| 
